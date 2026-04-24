@@ -1,36 +1,54 @@
 # Boarding Pass Advisor
 
-AI-powered airport lounge advisor that extracts data from boarding passes and recommends lounges based on terminal, hours, and amenities.
+An AI-powered travel assistant that transforms boarding pass images into instant airport advisory recommendations. Built as a technical prototype for agentic systems using LangGraph and GPT-4o.
 
-## Setup
+## Architecture
+The system is orchestrated as a **LangGraph state machine** with the following pipeline:
+1. **OCR Node:** GPT-4o Vision extracts structured fields (IATA codes, Gate, Terminal).
+2. **Heuristics:** Fallback logic for terminal inference if gate data is ambiguous.
+3. **Lounge Discovery:** Fetches data from a curated JSON cache (extensible to live APIs).
+4. **Ranking:** Filters by airport/hours and scores by terminal proximity.
+5. **Advisory LLM:** GPT-4o-mini generates a grounded summary with Pydantic-validated citations.
 
-1. Install dependencies:
+## Project Structure
+\`\`\`text
+boarding_pass_advisor/
+├── src/
+│   ├── graph.py             # LangGraph orchestration
+│   ├── nodes/               # Individual pipeline logic
+│   └── main.py              # FastAPI entry point
+├── data/                    # Lounge cache & samples
+├── tests/                   # Pytest suite
+└── demo.py                  # CLI test scenarios
+\`\`\`
 
-   pip install -r requirements.txt
+## Setup & Usage
 
-2. Copy .env.example to .env and add your OpenAI API key:
+### 1. Installation
+\`\`\`bash
+pip install -r requirements.txt
+\`\`\`
 
-   cp .env.example .env
-   # Edit .env with your API key
+### 2. Configuration
+Create a \`.env\` file from the template and add your OpenAI API key:
+\`\`\`bash
+cp .env.example .env
+\`\`\`
 
-3. Run the demo:
+### 3. Execution
+* **CLI Demo:** \`python demo.py\`
+* **API Server:** \`uvicorn src.main:app --reload\`
+* **Tests:** \`pytest tests/ -v\`
 
-   python demo.py
+## API Usage
+**POST \`/advisory\`** (Accepts image or text fallback)
+\`\`\`bash
+curl -X POST http://localhost:8000/advisory -F "image=@pass.jpg"
+\`\`\`
 
-4. Start the API server:
+## Technical Decisions
+* **Multimodal OCR:** Used GPT-4o over Tesseract for zero-shot JSON extraction.
+* **Curated Cache:** Used \`data/lounges_cache.json\` for deterministic testing.
+* **Grounded Generation:** Enforced strict RAG constraints to prevent hallucinations.
 
-   uvicorn src.main:app --reload
-
-## API Endpoints
-
-- POST /advisory - Upload boarding pass image or text to get lounge recommendations
-
-## Testing
-
-Run tests with pytest:
-
-   pytest tests/
-
-## Cache Setup
-
-Populate data/lounges_cache.json with lounge data for airports you care about (see example in src/nodes/lounge_fetch.py)
+**Built by:** Youcef Benkhedda, PhD (April 2026)
